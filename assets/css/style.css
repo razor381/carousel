@@ -1,8 +1,17 @@
-.main {
+.section {
   width: 80%;
   margin: 0 auto;
   padding: 2rem;
   background: #eee;
 }
 
+.top-section {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+}
 
+.section__content {
+  width: 50rem;
+  height: 30rem;
+}

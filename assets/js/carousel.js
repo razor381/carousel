@@ -1,4 +1,6 @@
 const SCROLL_RATE = 20;
+const SCROLL_HOLD_DEFAULT = 2;
+const AUTOSCROLL = 'autoscroll';
 
 const carouselEls = document.querySelectorAll('.carousel');
 
@@ -22,10 +24,10 @@ if (carouselEls && carouselEls.length) {
 *   navLeaderEls: [],
 */
 
-function Carousel(el) {
+function Carousel(element) {
   const self = this;
-  this.el = el;
-  this.contentEl = el.querySelector('.carousel-content');
+  this.el = element;
+  this.contentEl = this.el.querySelector('.carousel-content');
   this.windowWidth = this.contentEl.getBoundingClientRect().width;
   this.imageEls = Array.from(this.contentEl.children);
   this.activeIndex = 0;
@@ -39,7 +41,41 @@ function Carousel(el) {
     } = addNavigationElements(self, this.el)
   );
 
+  this.isAutoScroll = this.el.classList.contains(AUTOSCROLL);
+
+  // -------- props end here --------
+
   onScrollCompletion(self);
+
+  if (this.isAutoScroll) {
+    addAutoScroll(self);
+  }
+}
+
+function getHoldTime(self) {
+  const { classList } = self.el;
+  const holdClassIndex = Array.from(classList).findIndex(i => i.match(/^hold\-/));
+
+  if (holdClassIndex === -1) {
+    return 0;
+  }
+
+  return Math.floor(+classList[holdClassIndex].split('-')[1]);
+}
+
+function addAutoScroll(self) {
+  let iterator = 0;
+
+  const holdTime = getHoldTime(self) || SCROLL_HOLD_DEFAULT;
+
+  setInterval(() => {
+    const noOfImages = self.imageEls.length;
+    self.activeIndex = (++iterator) % noOfImages;
+
+    animateScroll(self);
+    onScrollCompletion(self);
+
+  }, holdTime * 1000)
 }
 
 function updateNavButtonVisibility(self) {
