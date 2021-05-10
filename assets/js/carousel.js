@@ -3,7 +3,6 @@ const SCROLL_RATE = 20;
 const carouselEls = document.querySelectorAll('.carousel');
 
 if (carouselEls && carouselEls.length) {
-
   carouselEls.forEach((el) => {
     const carousel = new Carousel(el);
   });
@@ -77,15 +76,29 @@ function updateLeaderPosition(self) {
 }
 
 function onScrollCompletion(self) {
-  updateNavButtonVisibility(self);
+  // updateNavButtonVisibility(self);
   updateLeaderPosition(self);
+}
+
+function getNewActiveIndex(self, isRightScroll) {
+  const maxIndex = self.imageEls.length - 1;
+
+  if (self.activeIndex === 0 && !isRightScroll) {
+    return maxIndex;
+  }
+
+  if (self.activeIndex === maxIndex && isRightScroll) {
+    return 0;
+  }
+
+  return isRightScroll ? self.activeIndex + 1 : self.activeIndex - 1;
 }
 
 function addButtonMovementListener(self, buttonEl, isRightScroll=true) {
   buttonEl.addEventListener('click', () => {
-    self.activeIndex += isRightScroll ? 1 : -1;
-    animateScroll(self);
+    self.activeIndex = getNewActiveIndex(self, isRightScroll);
 
+    animateScroll(self);
     onScrollCompletion(self);
   });
 }
