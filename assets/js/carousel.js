@@ -1,3 +1,5 @@
+const SCROLL_RATE = 20;
+
 const carouselEls = document.querySelectorAll('.carousel');
 
 if (carouselEls && carouselEls.length) {
@@ -15,6 +17,7 @@ if (carouselEls && carouselEls.length) {
 *   windowWidth
 *   imageEls: [image1, image2]
 *   activeIndex
+*   prevIndex
 *   navButtons: { leftButtonEl, rightButtonEl }
 *   navLeadersEl,
 *   navLeaderEls: [],
@@ -27,6 +30,7 @@ function Carousel(el) {
   this.windowWidth = this.contentEl.getBoundingClientRect().width;
   this.imageEls = Array.from(this.contentEl.children);
   this.activeIndex = 0;
+  this.prevIndex = 0;
 
   (
     {
@@ -79,20 +83,9 @@ function onScrollCompletion(self) {
 
 function addButtonMovementListener(self, buttonEl, isRightScroll=true) {
   buttonEl.addEventListener('click', () => {
-    const firstImg = self.imageEls[0];
-    const marginLeft = parseInt(firstImg.style.marginLeft);
-
-    // set left boundary limit
-    if (!isRightScroll && (!marginLeft || Math.abs(marginLeft) < 10)) return ;
-    // set right boundary limit
-    if (isRightScroll && (Math.abs(marginLeft) > ((self.imageEls.length - 2) * self.windowWidth))) {
-      return;
-    }
-
     self.activeIndex += isRightScroll ? 1 : -1;
+    animateScroll(self);
 
-    const scrollDistance = isRightScroll ? -self.windowWidth : self.windowWidth;
-    firstImg.style.marginLeft = (marginLeft || 0) + scrollDistance + 'px';
     onScrollCompletion(self);
   });
 }
@@ -103,9 +96,8 @@ function addLeaderMovementListener(self, leaderEls) {
       if (self.activeIndex === index) return;
 
       self.activeIndex = Array.from(leaderEl.parentNode.children).indexOf(leaderEl);
-      const firstImg = self.imageEls[0];
+      animateScroll(self);
 
-      firstImg.style.marginLeft = -self.activeIndex * self.windowWidth + 'px';
       onScrollCompletion(self);
   })
   })
@@ -159,4 +151,26 @@ function addNavigationLeaders(self, el) {
   el.appendChild(navLeadersEl);
 
   return {navLeadersEl, navLeaderEls};
+}
+
+function animateScroll(self) {
+  if (self.activeIndex === self.prevIndex) return;
+
+  const firstImg = self.imageEls[0];
+  let finalVal = -1 * self.activeIndex * self.windowWidth;
+  let initialVal = -1 * self.prevIndex * self.windowWidth;
+
+  let direction = (self.activeIndex > self.prevIndex) ? -1 : 1;
+  let increment = Math.abs(self.activeIndex - self.prevIndex) * (self.windowWidth/SCROLL_RATE) * direction;
+
+  animate(initialVal);
+
+  function animate(val) {
+    firstImg.style.marginLeft = val + 'px';
+    if (Math.floor(Math.abs(finalVal - val)) === 0 ) return;
+    window.requestAnimationFrame(() => animate(val + increment));
+  }
+
+  self.prevIndex = self.activeIndex;
+  firstImg.style.marginLeft = finalVal + 'px';
 }
