@@ -1,5 +1,5 @@
 .carousel {
-  margin: 1rem auto;
+  margin: 1rem 4rem;
   position: relative;
 }
 
@@ -27,12 +27,12 @@
 
 .carousel__left-btn {
   content: '<';
-  left: -6rem;
+  left: -4rem;
 }
 
 .carousel__right-btn {
   content: '>';
-  right: -6rem;
+  right: -4rem;
 }
 
 .carousel-content {
@@ -40,6 +40,7 @@
   height: 100%;
   overflow: hidden;
   display: flex;
+  border-radius: 8px;
 }
 
 .carousel-content img {

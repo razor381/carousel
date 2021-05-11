@@ -1,29 +1,38 @@
 const SCROLL_RATE = 20;
 const AUTOSCROLL = 'autoscroll';
+const MINIMAL = 'minimal';
+const NO_BUTTONS = 'no-buttons';
 
-const SCROLL_HOLD_DEFAULT = 2; //seconds
-const PAUSE_TIME = 2; //seconds
+const SCROLL_HOLD_DEFAULT = 3; //seconds
+const PAUSE_TIME = 3; //seconds
 
 const carouselEls = document.querySelectorAll('.carousel');
 
 if (carouselEls && carouselEls.length) {
   carouselEls.forEach((el) => {
-    const carousel = new Carousel(el);
+    new Carousel(el);
   });
 }
 
 
 /*
-* Class Carousel
-*   el
-*   contentEl
-*   windowWidth
-*   imageEls: [image1, image2]
-*   activeIndex
-*   prevIndex
-*   navButtons: { leftButtonEl, rightButtonEl }
-*   navLeadersEl,
-*   navLeaderEls: [],
+*   Class Carousel
+*      @params:
+*         element -> DOMElement
+*
+*      @props:
+*         el -> DOMElement
+*         contentEl ->DOMElement
+*         windowWidth -> number
+*         imageEls: -> array
+*         activeIndex -> number
+*         prevIndex -> number
+*         this.autoScrollPaused -> Boolean;
+*         navButtons: { leftButtonEl, rightButtonEl } -> object
+*         navLeadersEl -> DOMElement
+*         navLeaderEls: -> array
+*         isMinimal: -> Boolean
+*         isNoButtons: -> Boolean
 */
 
 function Carousel(element) {
@@ -35,14 +44,14 @@ function Carousel(element) {
   this.activeIndex = 0;
   this.prevIndex = 0;
   this.autoScrollPaused = false;
+  this.isMinimal = checkIsMinimal(self);
+  this.isNoButtons = checkIsNoButtons(self);
 
-  (
-    {
-      navButtons: this.navButtons,
-      navLeadersEl: this.navLeadersEl,
-      navLeaderEls: this.navLeaderEls,
-    } = addNavigationElements(self, this.el)
-  );
+  ({
+    navButtons: this.navButtons,
+    navLeadersEl: this.navLeadersEl,
+    navLeaderEls: this.navLeaderEls,
+  } = addNavigationElements(self, this.el));
 
   this.isAutoScroll = this.el.classList.contains(AUTOSCROLL);
 
@@ -50,9 +59,33 @@ function Carousel(element) {
 
   onScrollCompletion(self);
 
-  if (this.isAutoScroll) {
+  if (this.isAutoScroll || this.isMinimal) {
     addAutoScroll(self);
   }
+
+  if (this.isMinimal) {
+    hideButtons(self);
+    this.navLeadersEl.style.display = 'none';
+  }
+
+  if (!this.isMinimal && this.isNoButtons) {
+    hideButtons(self);
+  }
+}
+
+function hideButtons(self) {
+  self.navButtons.leftButtonEl.style.display = 'none';
+  self.navButtons.rightButtonEl.style.display = 'none';
+}
+
+function checkIsMinimal(self) {
+  const minimalIndex = searchSubstringIndex(self.el.classList, MINIMAL);
+  return minimalIndex !== -1;
+}
+
+function checkIsNoButtons(self) {
+  const noButtonIndex = searchSubstringIndex(self.el.classList, NO_BUTTONS);
+  return noButtonIndex !== -1;
 }
 
 function searchSubstringIndex(list, reg) {
@@ -139,6 +172,16 @@ function updateLeaderPosition(self) {
 }
 
 function onScrollCompletion(self) {
+
+  /*
+  * @TODO: add scroll-past-boundary behavior options
+  *
+  * - add modifier to choose between default, no-boundary-scroll or circular-scroll
+  * - left due to insufficient time
+  * - uncomment below code after adding feature
+  *
+  */
+
   // updateNavButtonVisibility(self);
   updateLeaderPosition(self);
 }
