@@ -1,6 +1,8 @@
 const SCROLL_RATE = 20;
-const SCROLL_HOLD_DEFAULT = 2;
 const AUTOSCROLL = 'autoscroll';
+
+const SCROLL_HOLD_DEFAULT = 2; //seconds
+const PAUSE_TIME = 2; //seconds
 
 const carouselEls = document.querySelectorAll('.carousel');
 
@@ -32,6 +34,7 @@ function Carousel(element) {
   this.imageEls = Array.from(this.contentEl.children);
   this.activeIndex = 0;
   this.prevIndex = 0;
+  this.autoScrollPaused = false;
 
   (
     {
@@ -52,9 +55,13 @@ function Carousel(element) {
   }
 }
 
+function searchSubstringIndex(list, reg) {
+  return Array.from(list).findIndex(i => i.match(reg));
+}
+
 function getHoldTime(self) {
   const { classList } = self.el;
-  const holdClassIndex = Array.from(classList).findIndex(i => i.match(/^hold\-/));
+  const holdClassIndex = searchSubstringIndex(classList, /^hold\-/);
 
   if (holdClassIndex === -1) {
     return 0;
@@ -63,18 +70,38 @@ function getHoldTime(self) {
   return Math.floor(+classList[holdClassIndex].split('-')[1]);
 }
 
+function checkIsLeftScroll (self) {
+  const { classList } = self.el;
+  const leftAutoScrollIndex = searchSubstringIndex(classList, 'left-autoscroll');
+
+  return !!(leftAutoScrollIndex !== -1) ;
+}
+
+function getNewIteratorVal(self, iterator, isLeftScroll) {
+  const imagesNumber = self.imageEls.length;
+
+  if (isLeftScroll) {
+    --iterator;
+    return iterator < 0 ? imagesNumber - 1 : iterator;
+  }
+
+  return ++iterator % imagesNumber;
+}
+
 function addAutoScroll(self) {
   let iterator = 0;
 
   const holdTime = getHoldTime(self) || SCROLL_HOLD_DEFAULT;
+  const isLeftScroll = checkIsLeftScroll(self);
 
   setInterval(() => {
-    const noOfImages = self.imageEls.length;
-    self.activeIndex = (++iterator) % noOfImages;
+    if (!self.autoScrollPaused) {
+      iterator = getNewIteratorVal(self, iterator, isLeftScroll);
+      self.activeIndex = iterator;
 
-    animateScroll(self);
-    onScrollCompletion(self);
-
+      animateScroll(self);
+      onScrollCompletion(self);
+    }
   }, holdTime * 1000)
 }
 
@@ -134,6 +161,8 @@ function addButtonMovementListener(self, buttonEl, isRightScroll=true) {
   buttonEl.addEventListener('click', () => {
     self.activeIndex = getNewActiveIndex(self, isRightScroll);
 
+    delayAutoScroll(self);
+
     animateScroll(self);
     onScrollCompletion(self);
   });
@@ -143,6 +172,8 @@ function addLeaderMovementListener(self, leaderEls) {
   leaderEls.forEach((leaderEl, index) => {
     leaderEl.addEventListener('click', (e) => {
       if (self.activeIndex === index) return;
+
+      delayAutoScroll(self);
 
       self.activeIndex = Array.from(leaderEl.parentNode.children).indexOf(leaderEl);
       animateScroll(self);
@@ -200,6 +231,11 @@ function addNavigationLeaders(self, el) {
   el.appendChild(navLeadersEl);
 
   return {navLeadersEl, navLeaderEls};
+}
+
+function delayAutoScroll(self) {
+  self.autoScrollPaused = true;
+  setTimeout(() => self.autoScrollPaused = false, PAUSE_TIME * 1000);
 }
 
 function animateScroll(self) {
